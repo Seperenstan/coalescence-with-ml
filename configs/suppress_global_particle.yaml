@@ -1,0 +1,20 @@
+# Suppress coalescence with a global policy: the agent sees the whole lattice
+# and picks which particle to move (it then steps in a random direction).
+variant: global_particle
+facilitating: false
+length: 50
+n_particles: 50
+training_episodes: 300
+max_steps: 1000
+seed: null
+agent:
+  hidden_dim: 128
+  batch_size: 32
+  gamma: 0.99
+  lr: 0.001
+  capacity: 10000
+  update_rate: 1000
+  eps_start: 1.0
+  eps_end: 0.03
+  eps_decay: 5000
+  grad_clip: 50

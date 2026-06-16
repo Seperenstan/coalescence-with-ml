@@ -1,0 +1,22 @@
+# Facilitate coalescence with a local policy: same observation as the suppress
+# case, but the reward drives particles together so the density decays faster
+# than the 1/sqrt(pi t) baseline.
+variant: local_action
+facilitating: true
+length: 15
+n_particles: 15
+obs_radius: 3
+training_episodes: 300
+max_steps: 1000
+seed: null
+agent:
+  hidden_dim: 128
+  batch_size: 32
+  gamma: 0.99
+  lr: 0.001
+  capacity: 10000
+  update_rate: 1200
+  eps_start: 1.0
+  eps_end: 0.05
+  eps_decay: 6000
+  grad_clip: 50

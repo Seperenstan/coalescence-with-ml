@@ -1,0 +1,20 @@
+# Facilitate coalescence with full control: whole-lattice observation, the agent
+# picks both which particle moves and its direction; the reward favours merges.
+variant: global_particle_action
+facilitating: true
+length: 15
+n_particles: 15
+training_episodes: 300
+max_steps: 1000
+seed: null
+agent:
+  hidden_dim: 128
+  batch_size: 32
+  gamma: 0.99
+  lr: 0.005
+  capacity: 10000
+  update_rate: 1000
+  eps_start: 1.0
+  eps_end: 0.03
+  eps_decay: 20000
+  grad_clip: 50
