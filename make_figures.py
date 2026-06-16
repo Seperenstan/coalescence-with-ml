@@ -14,7 +14,7 @@ from pathlib import Path
 
 import matplotlib.pyplot as plt
 import numpy as np
-from matplotlib import font_manager
+from matplotlib.patches import Circle, FancyArrowPatch, FancyBboxPatch
 
 ROOT = Path(__file__).parent
 RESULTS = ROOT / "results"
@@ -29,6 +29,8 @@ GRID = "#1c2433"
 TEAL = "#2dd4bf"
 VIOLET = "#a78bfa"
 AMBER = "#fbbf24"
+RAIL = "#2a3344"
+EDGE = "#243042"
 
 AGENT_COLORS = {
     "Choose action": TEAL,
@@ -122,12 +124,90 @@ def fig_control():
 
 
 def fig_cover():
-    """Single suppression panel — the headline result, used as the cover."""
-    fig, ax = plt.subplots(figsize=(7.2, 4.6))
-    _plot_density(ax, "suppressing", "Learning to suppress coalescence")
-    ax.legend(loc="lower left", fontsize=10)
-    fig.tight_layout()
-    fig.savefig(FIGURES / "cover.png", bbox_inches="tight")
+    """Schematic cover: a 1D lattice with hop directions, the observation window
+    around one particle, and the policy network that turns it into an action."""
+    fig, ax = plt.subplots(figsize=(12, 6.75), dpi=100)
+    fig.patch.set_facecolor(BG)
+    ax.set_facecolor(BG)
+    ax.set_xlim(0, 120)
+    ax.set_ylim(0, 67.5)
+    ax.set_aspect("equal")
+    ax.axis("off")
+
+    def mono(x, y, s, size, color, ha="left", weight="normal"):
+        ax.text(x, y, s, fontsize=size, color=color, ha=ha, va="center",
+                family="monospace", weight=weight)
+
+    # title
+    mono(8, 62, "COALESCING RANDOM WALKS  ·  DEEP Q-LEARNING", 12.5, TEAL)
+    ax.text(8, 56.5, "Coalescence with ML", fontsize=31, color=TEXT, weight="bold", va="center")
+    mono(8, 51, "an agent learns where each particle should hop", 13, MUTED)
+
+    # lattice
+    n, x0, dx, yL = 10, 10, 6.4, 24
+    sites = [x0 + i * dx for i in range(n)]
+    ax.plot([sites[0] - 2, sites[-1] + 2], [yL, yL], color=RAIL, lw=3, zorder=1, solid_capstyle="round")
+    for sx in sites:
+        ax.plot([sx, sx], [yL - 1.1, yL + 1.1], color=EDGE, lw=2, zorder=1)
+    # dotted continuation: the lattice runs on (periodic) past both ends
+    for side in (-1, 1):
+        edge = sites[0] - 2 if side < 0 else sites[-1] + 2
+        ax.plot([edge + side * k for k in (1.3, 2.4, 3.5)], [yL] * 3, marker="s",
+                ms=2.2, ls="none", color=RAIL, zorder=1)
+    occ = {1: TEAL, 3: VIOLET, 4: TEAL, 6: VIOLET, 8: TEAL}
+    for i, c in occ.items():
+        ax.add_patch(Circle((sites[i], yL), 2.5, facecolor=c, alpha=0.18, edgecolor="none", zorder=3))
+        ax.add_patch(Circle((sites[i], yL), 1.55, facecolor=c, edgecolor="none", zorder=4))
+
+    def hop(sx, direction, color):
+        ax.add_patch(FancyArrowPatch((sx, yL + 2.2), (sx + direction * 4.2, yL + 2.2),
+                                     arrowstyle="-|>", mutation_scale=12, lw=2, color=color,
+                                     connectionstyle="arc3,rad=-0.45", zorder=5))
+
+    hop(sites[1], +1, MUTED)
+    hop(sites[8], -1, MUTED)
+    hop(sites[4], -1, TEAL)
+    hop(sites[4], +1, TEAL)
+
+    # observation window (radius 2 around the centre particle)
+    lo, hi, cx = 2, 6, sites[4]
+    wx0, wx1 = sites[lo] - dx / 2, sites[hi] + dx / 2
+    ax.add_patch(FancyBboxPatch((wx0, yL - 4.2), wx1 - wx0, 8.4,
+                                boxstyle="round,pad=0.1,rounding_size=1.2",
+                                facecolor=TEAL, alpha=0.10, edgecolor=TEAL, lw=2,
+                                linestyle=(0, (5, 3)), zorder=2))
+    mono(cx, 16.5, "observation radius  r = 2", 12, TEAL, ha="center")
+
+    # policy network
+    ix, hx, ox = 78, 92, 104
+    iy = hy = [16, 22, 28, 34, 40]
+    oy = [25, 31]
+    for yy in iy:
+        for hyy in hy:
+            ax.plot([ix, hx], [yy, hyy], color=EDGE, lw=0.7, alpha=0.7, zorder=1)
+    for hyy in hy:
+        for oyy in oy:
+            ax.plot([hx, ox], [hyy, oyy], color=EDGE, lw=0.7, alpha=0.7, zorder=1)
+    for yy in iy:
+        ax.add_patch(Circle((ix, yy), 1.25, facecolor="#0b0f18", edgecolor=TEAL, lw=1.6, zorder=4))
+    for yy in hy:
+        ax.add_patch(Circle((hx, yy), 1.25, facecolor="#0b0f18", edgecolor=VIOLET, lw=1.6, zorder=4))
+    for yy in oy:
+        ax.add_patch(Circle((ox, yy), 1.5, facecolor=VIOLET, edgecolor=TEAL, lw=1.6, zorder=4))
+    mono(hx, 45, "policy network", 11.5, MUTED, ha="center")
+
+    # window cells fan into the input layer
+    for cxw, yy in zip([sites[i] for i in range(lo, hi + 1)], iy):
+        ax.add_patch(FancyArrowPatch((cxw, yL - 4.6), (ix - 1.6, yy), arrowstyle="-",
+                                     lw=1.1, color=TEAL, alpha=0.45,
+                                     connectionstyle="arc3,rad=-0.18", zorder=1))
+
+    # outputs -> action
+    mono(ox + 3.2, 31, "←", 18, TEXT)
+    mono(ox + 3.2, 25, "→", 18, TEXT)
+    mono(ox + 2.6, 19.5, "action", 11.5, MUTED)
+
+    fig.savefig(FIGURES / "cover.png", facecolor=BG, bbox_inches="tight", pad_inches=0.25)
     plt.close(fig)
 
 
@@ -187,20 +267,28 @@ def fig_hyperparameters():
 
 
 def fig_observation_radius():
-    """How the local-action agent learns as its observation window grows."""
-    radii = [1, 2, 3, 5, 10]
-    palette = [TEAL, "#38bdf8", VIOLET, AMBER, FAINT]
-    fig, ax = plt.subplots(figsize=(7.6, 4.4))
-    for color, r in zip(palette, radii):
-        try:
-            data = smooth(load("hyperparameters", f"reward_per_training_observation_radius_{r}.txt")[:100])
-        except OSError:
-            continue
-        ax.plot(np.arange(1, len(data) + 1), data, color=color, lw=2.0, label=f"$r_o = {r}$")
-    ax.set_xlabel("training episode")
-    ax.set_ylabel("accumulated reward")
-    ax.set_title("Wider observation, faster learning", fontsize=13, pad=10)
-    ax.legend(loc="lower right", fontsize=10, ncol=2)
+    """Density vs. time for local-action agents with different observation radii.
+
+    Evaluation rollouts of the trained agents on a large lattice: a wider window
+    lets the agent hold more particles apart, well above the 1/sqrt(pi t) baseline.
+    """
+    radii = [(1, TEAL), (3, VIOLET), (5, AMBER)]
+    fig, ax = plt.subplots(figsize=(7.6, 4.6))
+    for r, color in radii:
+        data = load("performance", f"obs_radius_r{r}.txt")
+        ax.plot(np.arange(1, len(data) + 1), data, color=color, lw=2.4, label=f"$r_o = {r}$")
+
+    rnd = load("performance", "obs_radius_random.txt")
+    ax.plot(np.arange(1, len(rnd) + 1), rnd, color=FAINT, lw=1.8, label="Random agent")
+    tt, th = theory(len(rnd))
+    ax.plot(tt, th, color=MUTED, lw=1.5, ls="--", label=r"$1/\sqrt{\pi t}$")
+
+    ax.set_xscale("log")
+    ax.set_yscale("log")
+    ax.set_xlabel("time  $t$  (sweeps)")
+    ax.set_ylabel(r"$N(t)/N_0$")
+    ax.set_title("The more it sees, the more it suppresses", fontsize=13, pad=10)
+    ax.legend(loc="lower left", fontsize=9.5)
     _style(ax)
     fig.tight_layout()
     fig.savefig(FIGURES / "observation-radius.png", bbox_inches="tight")

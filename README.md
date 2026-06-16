@@ -68,12 +68,13 @@ from. Same finding shows up in the comparison figure above.
 
 ## How much does the agent need to see?
 
-![Reward vs. training for different observation radii](figures/observation-radius.png)
+![Density over time for different observation radii](figures/observation-radius.png)
 
 For the local "choose action" agent, the observation radius `r` is the one knob
-that decides how much of the lattice it can sense. Bigger helps — up to a point.
-A radius of 5 learns fastest and highest; a radius of 10 actually does a little
-*worse*, because the extra inputs are mostly empty sites that dilute the signal.
+that decides how much of the lattice it can sense. Evaluating the trained agents
+on a large lattice, a wider window holds more particles apart: `r = 5` suppresses
+the most, and all three radii sit well above the random walk and the
+`1/sqrt(pi t)` baseline (which overlap at the bottom).
 
 ## The hyperparameter study
 
