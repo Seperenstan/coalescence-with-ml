@@ -14,6 +14,7 @@ from pathlib import Path
 
 import matplotlib.pyplot as plt
 import numpy as np
+from matplotlib.colors import ListedColormap
 from matplotlib.patches import Circle, FancyArrowPatch, FancyBboxPatch
 
 ROOT = Path(__file__).parent
@@ -295,9 +296,35 @@ def fig_observation_radius():
     plt.close(fig)
 
 
+def fig_spacetime():
+    """Space-time view of the lattice: a trained agent holds particles apart while
+    a random walk collapses them. Each row is one sweep, bright cells are particles."""
+    agent = load("performance", "spacetime_agent.txt")
+    rnd = load("performance", "spacetime_random.txt")
+    cmap = ListedColormap([BG, TEAL])
+
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(11, 4.8), sharey=True)
+    for ax, data, title, end in (
+        (ax1, agent, "Trained agent — suppressing", int(agent[-1].sum())),
+        (ax2, rnd, "Random walk", int(rnd[-1].sum())),
+    ):
+        ax.imshow(data, aspect="auto", cmap=cmap, interpolation="nearest")
+        ax.set_xlabel("lattice site")
+        ax.set_title(f"{title}   ({int(data[0].sum())} → {end} particles)", fontsize=12, pad=8)
+        for s in ax.spines.values():
+            s.set_color(GRID)
+        ax.tick_params(length=0)
+        ax.grid(False)
+    ax1.set_ylabel("sweep")
+    fig.tight_layout()
+    fig.savefig(FIGURES / "spacetime.png", bbox_inches="tight")
+    plt.close(fig)
+
+
 def main():
     FIGURES.mkdir(exist_ok=True)
-    for fn in (fig_cover, fig_control, fig_training, fig_hyperparameters, fig_observation_radius):
+    for fn in (fig_cover, fig_control, fig_spacetime, fig_training,
+               fig_hyperparameters, fig_observation_radius):
         fn()
         print(f"wrote figures/{fn.__name__.replace('fig_', '').replace('_', '-')}.png")
 

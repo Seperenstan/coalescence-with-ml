@@ -26,6 +26,13 @@ bend that curve?* Two opposite goals —
 
 I trained a Deep Q-Network for each goal and let the reward do the rest.
 
+![Space-time view of the lattice under an agent vs. a random walk](figures/spacetime.png)
+
+The clearest way to see it: each row above is one sweep and bright cells are
+particles. Under the trained suppressing agent (left) the particles stay
+numerous and spread out; under a plain random walk (right) they coalesce into a
+handful of thinning trajectories.
+
 ## Three ways to hand the agent control
 
 The interesting design question is *what the agent sees and what it acts on*. I
